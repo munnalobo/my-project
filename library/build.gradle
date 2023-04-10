@@ -1,0 +1,89 @@
+plugins {
+    id 'java'
+    id "io.freefair.aspectj.post-compile-weaving" version "6.6.2"
+
+}
+
+group 'com.example'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.aspectj:aspectjweaver:1.9.7'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': ''
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+configurations {
+    aspectpath
+}
+
+task aspectJar(type: Jar) {
+    from sourceSets.main.output
+    from configurations.aspectpath
+    archiveClassifier = 'aspect'
+}
+
+artifacts {
+    aspectJar
+}
+
+sourceSets.main.java {
+    srcDirs += [file("$buildDir/generated/sources/aspectj").absolutePath]
+}
+
+task compileAspect(type: JavaCompile) {
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
+    classpath = configurations.compileClasspath
+    destinationDir = file("$buildDir/classes/java/main")
+    options.compilerArgs = [
+            '-Xlint:deprecation',
+            '-Xlint:unchecked',
+            '-Xlint:path',
+            "-showWeaveInfo",
+            "-verbose",
+            "-aspectpath", configurations.aspectpath.getAsPath(),
+            "-cp", sourceSets.main.runtimeClasspath.getAsPath()
+    ]
+    doLast {
+        sourceSets.main.java.srcDirs += [file("$buildDir/generated/sources/aspectj").absolutePath]
+    }
+//    dependencies {
+//        implementation 'org.aspectj:aspectjrt:1.9.7'
+//    }
+}
+
+
+
+
+compileJava {
+    dependsOn compileAspect
+    sourceSets.main.java.srcDirs += "${buildDir}/generated-sources/aspectj"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        aspect {
+            java {
+                srcDirs = ['src/main/aspect']
+            }
+        }
+    }
+}
