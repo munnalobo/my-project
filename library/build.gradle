@@ -1,7 +1,5 @@
 plugins {
     id 'java'
-    id "io.freefair.aspectj.post-compile-weaving" version "6.6.2"
-
 }
 
 group 'com.example'
@@ -14,14 +12,13 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.aspectj:aspectjweaver:1.9.7'
+    implementation 'org.slf4j:slf4j-api:1.7.32'
 }
 
 jar {
     manifest {
         attributes 'Main-Class': ''
     }
-
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
@@ -29,16 +26,6 @@ jar {
 
 configurations {
     aspectpath
-}
-
-task aspectJar(type: Jar) {
-    from sourceSets.main.output
-    from configurations.aspectpath
-    archiveClassifier = 'aspect'
-}
-
-artifacts {
-    aspectJar
 }
 
 sourceSets.main.java {
@@ -68,7 +55,15 @@ task compileAspect(type: JavaCompile) {
 }
 
 
+task aspectJar(type: Jar) {
+    from sourceSets.main.output
+    from configurations.aspectpath
+    archiveClassifier = 'aspect'
+}
 
+artifacts {
+    aspectJar
+}
 
 compileJava {
     dependsOn compileAspect
